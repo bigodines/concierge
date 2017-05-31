@@ -10,7 +10,7 @@ import (
 )
 
 // Input channel
-type CommandChannel struct {
+type InputPacket struct {
 	Channel *slack.Channel
 	Event   *slack.MessageEvent
 	UserID  string
@@ -25,16 +25,16 @@ type ReplyChannel struct {
 var (
 	api *slack.Client
 	//	userMessages      Messages
-	botID             string
-	botCommandChannel chan *CommandChannel
-	botReplyChannel   chan ReplyChannel
+	botID           string
+	botInputChannel chan *InputPacket
+	botReplyChannel chan ReplyChannel
 )
 
 func handleBotCommands(c chan ReplyChannel) {
 	var rc ReplyChannel
 
 	for {
-		botChannel := <-botCommandChannel
+		botChannel := <-botInputChannel
 
 		reply := &slack.Msg{
 			Text: "Hello",
@@ -43,7 +43,6 @@ func handleBotCommands(c chan ReplyChannel) {
 		rc.Channel = botChannel.Channel
 		rc.Message = reply
 		c <- rc
-		fmt.Printf("Pushed to channel\n")
 
 		//reply := &slack.Msg{}
 
@@ -68,10 +67,8 @@ func main() {
 	api := slack.New(os.Args[2])
 	rtm := api.NewRTM()
 
-	botCommandChannel = make(chan *CommandChannel)
+	botInputChannel = make(chan *InputPacket)
 	botReplyChannel = make(chan ReplyChannel)
-
-	//userMessages = make(Messages, 0)
 
 	go rtm.ManageConnection()
 	go handleBotCommands(botReplyChannel)
@@ -93,19 +90,17 @@ Loop:
 					log.Fatalln(err)
 				}
 
-				command := &CommandChannel{
+				command := &InputPacket{
 					Channel: channelInfo,
 					Event:   ev,
 					UserID:  ev.User,
 				}
 
-				fmt.Printf("Type: %s\n", ev.Type)
-				fmt.Printf("Text: %s\n", ev.Text)
-				fmt.Printf("botID: %s\n", botID)
+				fmt.Printf("Type: %s, Text: %s, botID: %s\n", ev.Type, ev.Text, botID)
 
 				if ev.Type == "message" && strings.HasPrefix(ev.Text, "<@"+botID+">") {
 					fmt.Printf("Valid message\n")
-					botCommandChannel <- command
+					botInputChannel <- command
 				}
 
 			case *slack.RTMError:
