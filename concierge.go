@@ -18,9 +18,8 @@ type CommandChannel struct {
 
 // Output channel
 type ReplyChannel struct {
-	Channel      *slack.Channel
-	Attachment   *slack.Attachment
-	DisplayTitle string
+	Channel *slack.Channel
+	Message *slack.Msg
 }
 
 var (
@@ -36,24 +35,28 @@ func handleBotCommands(c chan ReplyChannel) {
 
 	for {
 		botChannel := <-botCommandChannel
+
+		reply := &slack.Msg{
+			Text: "Hello",
+			User: "Concierge",
+		}
 		rc.Channel = botChannel.Channel
+		rc.Message = reply
+		c <- rc
+		fmt.Printf("Pushed to channel\n")
+
 		//reply := &slack.Msg{}
+
 		//commandArray := strings.Fields(botChannel.Event.Text)
 		// switch commandArray[1] {
 
 	}
 }
 
-func handleBotReply() {
+func handleBotReply(rtm *slack.RTM) {
 	for {
 		ac := <-botReplyChannel
-		params := slack.PostMessageParameters{}
-		params.AsUser = true
-		params.Attachments = []slack.Attachment{*ac.Attachment}
-		_, _, errPostMessage := api.PostMessage(ac.Channel.Name, ac.DisplayTitle, params)
-		if errPostMessage != nil {
-			log.Fatal(errPostMessage)
-		}
+		rtm.SendMessage(rtm.NewOutgoingMessage(ac.Message.Text, ac.Channel.ID))
 	}
 }
 
@@ -72,7 +75,7 @@ func main() {
 
 	go rtm.ManageConnection()
 	go handleBotCommands(botReplyChannel)
-	go handleBotReply()
+	go handleBotReply(rtm)
 
 Loop:
 	for {
@@ -80,7 +83,11 @@ Loop:
 		case msg := <-rtm.IncomingEvents:
 			switch ev := msg.Data.(type) {
 
+			case *slack.ConnectedEvent:
+				botID = ev.Info.User.ID
+
 			case *slack.MessageEvent:
+				fmt.Printf("Got message: %s\n", msg.Data)
 				channelInfo, err := api.GetChannelInfo(ev.Channel)
 				if err != nil {
 					log.Fatalln(err)
@@ -92,7 +99,12 @@ Loop:
 					UserID:  ev.User,
 				}
 
+				fmt.Printf("Type: %s\n", ev.Type)
+				fmt.Printf("Text: %s\n", ev.Text)
+				fmt.Printf("botID: %s\n", botID)
+
 				if ev.Type == "message" && strings.HasPrefix(ev.Text, "<@"+botID+">") {
+					fmt.Printf("Valid message\n")
 					botCommandChannel <- command
 				}
 
