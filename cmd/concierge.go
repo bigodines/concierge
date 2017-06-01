@@ -9,29 +9,37 @@ import (
 	"github.com/nlopes/slack"
 )
 
+type message interface {
+	getType() string
+	getChannel() Channel
+	getEvent()
+}
+
+type Channel struct {
+}
+
 // Input channel
-type InputPacket struct {
+type InputInfo struct {
 	Channel *slack.Channel
 	Event   *slack.MessageEvent
 	UserID  string
 }
 
 // Output channel
-type ReplyChannel struct {
+type OutputInfo struct {
 	Channel *slack.Channel
 	Message *slack.Msg
 }
 
 var (
-	api *slack.Client
-	//	userMessages      Messages
+	api             *slack.Client
 	botID           string
-	botInputChannel chan *InputPacket
-	botReplyChannel chan ReplyChannel
+	botInputChannel chan *InputInfo
+	botReplyChannel chan OutputInfo
 )
 
-func handleBotCommands(c chan ReplyChannel) {
-	var rc ReplyChannel
+func handleBotCommands(c chan OutputInfo) {
+	var rc OutputInfo
 
 	for {
 		botChannel := <-botInputChannel
@@ -67,8 +75,8 @@ func main() {
 	api := slack.New(os.Args[2])
 	rtm := api.NewRTM()
 
-	botInputChannel = make(chan *InputPacket)
-	botReplyChannel = make(chan ReplyChannel)
+	botInputChannel = make(chan *InputInfo)
+	botReplyChannel = make(chan OutputInfo)
 
 	go rtm.ManageConnection()
 	go handleBotCommands(botReplyChannel)
@@ -90,7 +98,7 @@ Loop:
 					log.Fatalln(err)
 				}
 
-				command := &InputPacket{
+				command := &InputInfo{
 					Channel: channelInfo,
 					Event:   ev,
 					UserID:  ev.User,
