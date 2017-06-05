@@ -6,20 +6,19 @@ import (
 	"os"
 	"strings"
 
-	// import path
-
+	t "github.com/bigodines/concierge/pkg/types"
 	"github.com/nlopes/slack"
 )
 
 var (
 	api             *slack.Client
 	botID           string
-	botInputChannel chan *InputInfo
-	botReplyChannel chan OutputInfo
+	botInputChannel chan *t.InputInfo
+	botReplyChannel chan t.OutputInfo
 )
 
-func handleBotCommands(c chan OutputInfo) {
-	var rc OutputInfo
+func handleBotCommands(c chan t.OutputInfo) {
+	var rc t.OutputInfo
 
 	for {
 		botChannel := <-botInputChannel
@@ -55,8 +54,8 @@ func main() {
 	api := slack.New(os.Args[2])
 	rtm := api.NewRTM()
 
-	botInputChannel = make(chan *InputInfo)
-	botReplyChannel = make(chan OutputInfo)
+	botInputChannel = make(chan *t.InputInfo)
+	botReplyChannel = make(chan t.OutputInfo)
 
 	go rtm.ManageConnection()
 	go handleBotCommands(botReplyChannel)
@@ -78,7 +77,7 @@ Loop:
 					log.Fatalln(err)
 				}
 
-				command := &InputInfo{
+				command := &t.InputInfo{
 					Channel: channelInfo,
 					UserID:  ev.User,
 				}

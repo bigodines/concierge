@@ -1,14 +1,12 @@
 package adaptor
 
-type message struct {
-	Type    string
-	Channel Channel
-	User    User
-}
+import (
+	"concierge/pkg/types"
+)
 
-func (m message) getType() string {
+func (m types.Imessage) getType() string {
 	return m.Type
 }
-func (m message) getChannel() Channel {
+func (m types.Imessage) getChannel() types.Channel {
 	return m.Channel
 }
