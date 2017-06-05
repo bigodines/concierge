@@ -6,30 +6,10 @@ import (
 	"os"
 	"strings"
 
+	// import path
+
 	"github.com/nlopes/slack"
 )
-
-type message interface {
-	getType() string
-	getChannel() Channel
-	getEvent()
-}
-
-type Channel struct {
-}
-
-// Input channel
-type InputInfo struct {
-	Channel *slack.Channel
-	Event   *slack.MessageEvent
-	UserID  string
-}
-
-// Output channel
-type OutputInfo struct {
-	Channel *slack.Channel
-	Message *slack.Msg
-}
 
 var (
 	api             *slack.Client
@@ -100,7 +80,6 @@ Loop:
 
 				command := &InputInfo{
 					Channel: channelInfo,
-					Event:   ev,
 					UserID:  ev.User,
 				}
 
