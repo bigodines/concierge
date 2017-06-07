@@ -1,6 +1,7 @@
 package keyword
 
 import (
+	"sort"
 	"strings"
 )
 
@@ -31,6 +32,26 @@ func New(words string, excludes string, sensitive bool) *Matcher {
 	}
 }
 
+func (m *Matcher) CheckAll(s string) bool {
+	words := strings.Split(s, " ")
+	sort.Strings(words)
+	matches := 0
+	for i := 0; i < len(m.keywords); i++ {
+		if indexOf(m.keywords[i], words) >= 0 {
+			matches++
+		}
+	}
+
+	return matches == len(m.keywords)
+}
+
+func (m *Matcher) CheckAny(s string) bool {
+	return false
+}
+
+/**
+Removes trailing spaces and fix case in an array of strings
+*/
 func CleanUp(words []string) []string {
 	var ret []string
 
@@ -45,4 +66,16 @@ func CleanUp(words []string) []string {
 	}
 
 	return ret
+}
+
+/**
+Basic implementation of indexOf. Plenty of room for optimization.
+*/
+func indexOf(word string, data []string) int {
+	for k, v := range data {
+		if word == v {
+			return k
+		}
+	}
+	return -1
 }

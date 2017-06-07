@@ -26,3 +26,13 @@ func TestNew(t *testing.T) {
 		t.Error("Should have converted words to lower case because case sensitive is false")
 	}
 }
+
+func TestCheckAll(t *testing.T) {
+	var res bool
+	matcher := New("game, tonight", "was", false)
+
+	res = matcher.CheckAll("wanna do go the game tonight")
+	if !res {
+		t.Error("Failed to match keywords from input")
+	}
+}
