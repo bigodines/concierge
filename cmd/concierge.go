@@ -9,15 +9,6 @@ import (
 	"github.com/nlopes/slack"
 )
 
-type message interface {
-	getType() string
-	getChannel() Channel
-	getEvent()
-}
-
-type Channel struct {
-}
-
 // Input channel
 type InputInfo struct {
 	Channel *slack.Channel
