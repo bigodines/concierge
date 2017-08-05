@@ -33,21 +33,16 @@ func handleBotCommands(c chan OutputInfo) {
 	var rc OutputInfo
 
 	for {
-		botChannel := <-botInputChannel
+		command := <-botInputChannel
 
+		reply, err := buildReply(command)
 		reply := &slack.Msg{
 			Text: "Hello",
 			User: "Concierge",
 		}
-		rc.Channel = botChannel.Channel
+		rc.Channel = command.Channel
 		rc.Message = reply
 		c <- rc
-
-		//reply := &slack.Msg{}
-
-		//commandArray := strings.Fields(botChannel.Event.Text)
-		// switch commandArray[1] {
-
 	}
 }
 
