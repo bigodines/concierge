@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -29,10 +28,10 @@ var (
 	api             *slack.Client
 	botID           string
 	botInputChannel chan *InputInfo
-	botReplyChannel chan *OutputInfo
+	botReplyChannel chan OutputInfo
 )
 
-func handleBotCommands(c chan *OutputInfo) {
+func handleBotCommands(c chan OutputInfo) {
 	var rc OutputInfo
 
 	for {
@@ -41,36 +40,37 @@ func handleBotCommands(c chan *OutputInfo) {
 		reply, err := buildReply(command)
 		if err != nil {
 			log.Error("Can't parse command.")
-			log.Debug("%+v", reply)
+			log.Debug("%+v", command)
+			return
 		}
 		rc.Channel = command.Channel
 		rc.Message = reply
-		c <- &rc
+		c <- rc
 	}
 }
 
 func buildReply(command *InputInfo) (Msg, error) {
-	who := command.Event.Msg.User
+	var reply Msg
+	//who := command.Event.Msg.User
 	msg := command.Event.Msg.Text
-	if strings.Contains(Text, "giants game tonight") {
+	if strings.Contains(msg, "giants game tonight") {
 		// ..
 		// ..
 		reply = &slack.Msg{
 			User: "Concierge",
-			Text: "I can get you two tickets to the giants game for $9 dollars",
-			File: File{
-				"id": "abc",
-				"title": "G",
-				"url": "http://bigode.me,"
-			}
+			Text: "I can get you two tickets to the giants game for $9 ",
+			File: &slack.File{
+				ID:    "abc",
+				Title: "G",
+				URL:   "http://bigode.me,",
+			},
 		}
-		
-	}
-	return &slack.Msg{
-		Text: "Hello",
-		User: "Concierge",
-	}, nil
+		return reply, nil
 
+	} else {
+		log.Error(msg)
+	}
+	return nil, fmt.Errorf("Failed")
 }
 
 func handleBotReply(rtm *slack.RTM) {
@@ -89,7 +89,7 @@ func main() {
 	rtm := api.NewRTM()
 
 	botInputChannel = make(chan *InputInfo)
-	botReplyChannel = make(chan *OutputInfo)
+	botReplyChannel = make(chan OutputInfo)
 
 	go rtm.ManageConnection()
 	go handleBotCommands(botReplyChannel)
@@ -105,7 +105,7 @@ Loop:
 				botID = ev.Info.User.ID
 
 			case *slack.MessageEvent:
-				fmt.Printf("Got message: %s\n", msg.Data)
+				log.Debugf("Got message: %s\n", msg.Data)
 				channelInfo, err := api.GetChannelInfo(ev.Channel)
 				if err != nil {
 					log.Fatalln(err)
@@ -117,10 +117,9 @@ Loop:
 					UserID:  ev.User,
 				}
 
-				fmt.Printf("Type: %s, Text: %s, botID: %s\n", ev.Type, ev.Text, botID)
+				log.Debugf("Type: %s, Text: %s, botID: %s\n", ev.Type, ev.Text, botID)
 
-				if ev.Type == "message" && strings.HasPrefix(ev.Text, "<@"+botID+">") {
-					fmt.Printf("Valid message\n")
+				if ev.Type == "message" {
 					botInputChannel <- command
 				}
 
