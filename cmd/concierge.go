@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/nlopes/slack"
+	log "github.com/sirupsen/logrus"
 )
 
 // Input channel
@@ -22,28 +23,54 @@ type OutputInfo struct {
 	Message *slack.Msg
 }
 
+type Msg *slack.Msg
+
 var (
 	api             *slack.Client
 	botID           string
 	botInputChannel chan *InputInfo
-	botReplyChannel chan OutputInfo
+	botReplyChannel chan *OutputInfo
 )
 
-func handleBotCommands(c chan OutputInfo) {
+func handleBotCommands(c chan *OutputInfo) {
 	var rc OutputInfo
 
 	for {
 		command := <-botInputChannel
 
 		reply, err := buildReply(command)
-		reply := &slack.Msg{
-			Text: "Hello",
-			User: "Concierge",
+		if err != nil {
+			log.Error("Can't parse command.")
+			log.Debug("%+v", reply)
 		}
 		rc.Channel = command.Channel
 		rc.Message = reply
-		c <- rc
+		c <- &rc
 	}
+}
+
+func buildReply(command *InputInfo) (Msg, error) {
+	who := command.Event.Msg.User
+	msg := command.Event.Msg.Text
+	if strings.Contains(Text, "giants game tonight") {
+		// ..
+		// ..
+		reply = &slack.Msg{
+			User: "Concierge",
+			Text: "I can get you two tickets to the giants game for $9 dollars",
+			File: File{
+				"id": "abc",
+				"title": "G",
+				"url": "http://bigode.me,"
+			}
+		}
+		
+	}
+	return &slack.Msg{
+		Text: "Hello",
+		User: "Concierge",
+	}, nil
+
 }
 
 func handleBotReply(rtm *slack.RTM) {
@@ -62,7 +89,7 @@ func main() {
 	rtm := api.NewRTM()
 
 	botInputChannel = make(chan *InputInfo)
-	botReplyChannel = make(chan OutputInfo)
+	botReplyChannel = make(chan *OutputInfo)
 
 	go rtm.ManageConnection()
 	go handleBotCommands(botReplyChannel)
